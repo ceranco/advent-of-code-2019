@@ -1,10 +1,10 @@
-use clap::{self, App, Arg, SubCommand, AppSettings};
+use clap::{self, App, AppSettings, Arg, SubCommand};
 use std::{
+    cmp::max,
     ffi::{OsStr, OsString},
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
-    cmp::max,
 };
 
 fn is_valid_path(path: &OsStr) -> Result<(), OsString> {
@@ -15,30 +15,8 @@ fn is_valid_path(path: &OsStr) -> Result<(), OsString> {
     }
 }
 
-fn calculate_fuel_p1<T: BufRead>(reader: &mut T) -> i32 {
-    let mut fuel_sum = 0;
-    for line in reader.lines() {
-        let mass: i32 = line.unwrap().parse().unwrap();
-        fuel_sum += (mass / 3) - 2;
-    }
-    fuel_sum
-}
-
-fn calculate_fuel_p12<T: BufRead>(reader: &mut T) -> i32 {
-    let mut fuel_sum = 0;
-    for line in reader.lines() {
-        let mut mass: i32 = line.unwrap().parse().unwrap();
-        while mass > 0 {
-            let fuel = max((mass / 3) - 2, 0);
-            mass = fuel;
-            fuel_sum += mass;
-        }
-    }
-    fuel_sum
-}
-fn main() {
-    // get the path to the file
-    let matches = App::new("Advent of Code Day 1")
+fn app<'a, 'b>() -> App<'a, 'b> {
+    App::new("Advent of Code Day 1")
         .version("1.0")
         .author("Eran Cohen")
         .about("Calculates the fuel requirements for all the modules on a spacecraft")
@@ -73,11 +51,39 @@ fn main() {
                 ),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .get_matches();
+}
+
+fn calculate_fuel_p1<T: BufRead>(reader: &mut T) -> i32 {
+    let mut fuel_sum = 0;
+    for line in reader.lines() {
+        let mass: i32 = line.unwrap().parse().unwrap();
+        fuel_sum += (mass / 3) - 2;
+    }
+    fuel_sum
+}
+
+fn calculate_fuel_p12<T: BufRead>(reader: &mut T) -> i32 {
+    let mut fuel_sum = 0;
+    for line in reader.lines() {
+        let mut mass: i32 = line.unwrap().parse().unwrap();
+        while mass > 0 {
+            let fuel = max((mass / 3) - 2, 0);
+            mass = fuel;
+            fuel_sum += mass;
+        }
+    }
+    fuel_sum
+}
+fn main() {
+    // get the path to the file
+    let matches = app().get_matches();
 
     // open the file and prepare it for reading
     let file = File::open(
-        matches.subcommand().1.unwrap()
+        matches
+            .subcommand()
+            .1
+            .unwrap()
             .value_of_os("input")
             .unwrap(),
     )
@@ -88,8 +94,8 @@ fn main() {
     let fuel_sum = match matches.subcommand_name().unwrap() {
         "algo1" => calculate_fuel_p1(&mut reader),
         "algo2" => calculate_fuel_p12(&mut reader),
-        _ => panic!("Whaaaaaaaaaaaat")
-    } ;
+        _ => panic!("Whaaaaaaaaaaaat"),
+    };
 
     println!("The calculated fuel sum is: {}", fuel_sum);
 }
