@@ -25,6 +25,13 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .required(true)
                 .validator_os(is_valid_path),
         )
+        .arg(
+            Arg::with_name("alarm")
+                .short("a")
+                .long("alarm")
+                .help("Runs the program in the '1202 program alarm' state")
+                .takes_value(false)
+        )
 }
 
 #[derive(Clone, Copy)]
@@ -55,9 +62,11 @@ fn main() {
         .map(|s| s.parse::<i32>().expect("Malformed input"))
         .collect();
 
-    // restore the gravity assist program (your puzzle input) to the "1202 program alarm" state
-    memory[1] = 12;
-    memory[2] = 2;
+    // optionally restore the gravity assist program to the "1202 program alarm" state
+    if matches.is_present("alarm") {
+        memory[1] = 12;
+        memory[2] = 2;
+    }
 
     // run the program
     let mut pc= 0usize;
