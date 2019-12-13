@@ -56,7 +56,7 @@ impl FromStr for Vector {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Line {
     pub beginning: Point,
     pub end: Point,
@@ -65,6 +65,10 @@ pub struct Line {
 impl Line {
     pub fn new(beginning: Point, end: Point) -> Self {
         Self { beginning, end }
+    }
+
+    pub fn len(&self) -> i32 {
+        (self.beginning.x - self.end.x).abs() + (self.beginning.y - self.end.y).abs()
     }
 
     pub fn intersects(&self, other: &Line) -> Option<Point> {

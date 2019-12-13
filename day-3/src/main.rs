@@ -6,6 +6,7 @@ use std::{
     ffi::{OsStr, OsString},
     fs::File,
     io::{BufRead, BufReader},
+    iter::once,
     path::Path,
 };
 
@@ -37,13 +38,30 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                         .validator_os(is_valid_path),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("steps")
+                .about("Calculates distance using the steps algorithm (part 2)")
+                .version("1.0")
+                .author("Eran Cohen")
+                .arg(
+                    Arg::with_name("input")
+                        .short("i")
+                        .long("input")
+                        .help("The path to the input file")
+                        .takes_value(true)
+                        .required(true)
+                        .validator_os(is_valid_path),
+                ),
+        )
         .setting(AppSettings::SubcommandRequiredElseHelp)
 }
 
 fn main() {
     struct Intersection {
         point: Point,
+        line1: Line,
         line1_idx: usize,
+        line2: Line,
         line2_idx: usize,
     };
 
@@ -92,11 +110,15 @@ fn main() {
     for (idx1, line1) in (&lines[0]).iter().enumerate() {
         for (idx2, line2) in (&lines[1]).iter().enumerate() {
             if let Some(point) = line1.intersects(line2) {
-                intersections.push(Intersection {
-                    point,
-                    line1_idx: idx1,
-                    line2_idx: idx2,
-                });
+                if (idx1, idx2) != (0, 0) {
+                    intersections.push(Intersection {
+                        point,
+                        line1: *line1,
+                        line1_idx: idx1,
+                        line2: *line2,
+                        line2_idx: idx2,
+                    });
+                }
             }
         }
     }
@@ -112,16 +134,51 @@ fn main() {
                 )
             })
             .fold((Point { x: 0, y: 0 }, std::i32::MAX), |lowest, curr| {
-                if curr.1 != 0 && curr.1 < lowest.1 {
+                if curr.1 < lowest.1 {
                     curr
                 } else {
                     lowest
                 }
             });
-    
+
         println!(
             "Closest intersection point: {:?}, Manhattan distance: {}",
             point, distance
         );
+    }
+    // use the steps algorithm
+    else {
+        let (point, steps) = intersections
+            .iter()
+            .map(|intersection| {
+                // check the number of steps
+                let end_line1 =
+                    Line::new(intersection.line1.beginning, intersection.point);
+                let steps1 = (&lines[0])
+                    .iter()
+                    .take(intersection.line1_idx)
+                    .chain(once(&end_line1))
+                    .fold(0, |ctr, line| ctr + line.len());
+
+                let end_line2 =
+                    Line::new(intersection.line2.beginning, intersection.point);
+                let steps2 = (&lines[1])
+                    .iter()
+                    .take(intersection.line2_idx)
+                    .chain(once(&end_line2))
+                    .fold(0, |ctr, line| ctr + line.len());
+                (intersection.point, steps1 + steps2)
+            })
+            .fold((Point { x: 0, y: 0 }, std::i32::MAX), |lowest, curr| {
+                if curr.1 < lowest.1 {
+                    curr
+                } else {
+                    lowest
+                }
+            });
+            println!(
+                "Closest intersection point: {:?}, steps: {}",
+                point, steps
+            );
     }
 }
