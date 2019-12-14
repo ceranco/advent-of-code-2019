@@ -1,20 +1,20 @@
 /// The opcodes supported by the `IntcodeComputer`.
-/// 
+///
 /// # Parameter modes
 /// The parameters of each code support two modes:
-/// 
+///
 /// 1. *position* (`0`) - the parameter is interpreted as a **memory location**.
 /// 2. *immediate* (`1`) - the parameter is intereted as a **value**.
-/// 
+///
 /// If the parameter mode is **not** specified for a specific parameter,  
 /// it defaults to *position* (`0`) mode.   
 /// Parameters that the instruction writes to (`dst`) will **never**   
 /// be in *immediate* (`1`) mode, **only** in *position* (`0`) mode.
-/// 
+///
 /// Parameter modes are stored in the same value as the instruction's opcode.  
 /// The opcode is the rightmost two digits of the first value in an instruction.  
 /// Parameter modes are single digits, one per parameter, read right-to-left from the opcode.
-/// 
+///
 /// ## Example
 /// ```
 /// [1002, 4, 3, 4, 33, 99]
@@ -22,7 +22,7 @@
 /// The first instruction, `[1002, 4, 3, 4]`, is a multiply instruction:   
 /// the rightmost two digits of the first value, `02`, indicate multiplication.  
 /// Then, going right to left, the parameter modes are `0`, `1` and `0` (not present, default to `0`)  
-/// 
+///
 /// As such, the program will multiply the value at location `4`(33) with 3
 /// and save the product (99) at location `4`:
 /// ```
@@ -34,7 +34,7 @@ pub enum Opcode {
     /// ```
     /// [1(Add), src1(0|1), src2(0|1), dst(0)]
     /// ````
-    /// 
+    ///
     /// # Example
     /// ```
     /// [1001, 5, 2, 0, 99, 40]
@@ -50,7 +50,7 @@ pub enum Opcode {
     /// ```
     /// [2(Multiply), src1(0|1), src2(0|1), dst(0)]
     /// ````
-    /// 
+    ///
     /// # Example
     /// ```
     /// [102, 40, 5, 0, 99, 2]
@@ -66,7 +66,7 @@ pub enum Opcode {
     /// ```
     /// [3(Input), dst(0)]
     /// ```
-    /// 
+    ///
     /// # Example
     /// ```
     /// [3, 0, 99]
@@ -81,7 +81,7 @@ pub enum Opcode {
     /// ```
     /// [4(Output), src(0|1)]
     /// ```
-    /// 
+    ///
     /// # Example
     /// ```
     /// [4, 0, 99]
@@ -89,7 +89,7 @@ pub enum Opcode {
     /// This program will output a single value in location `0` (4).
     Output = 4,
     /// Terminates the program.
-    /// 
+    ///
     /// # Example
     /// ```
     /// [99, 1, 0, 1, 0]
@@ -124,7 +124,7 @@ impl IntcodeComputer {
 
     /// Runs program and consumes the memory.
     ///
-    /// This methods drops `self`, but it prevents needles copies
+    /// This methods drops `self`, but it prevents needless copies
     /// of the memory.
     pub fn run_once(mut self) -> i32 {
         // run the program
@@ -151,7 +151,7 @@ impl IntcodeComputer {
                         self.memory[dst] = self.memory[idx1] * self.memory[idx2];
                     }
                     Opcode::Terminate => break,
-                    _ => unimplemented!()
+                    _ => unimplemented!(),
                 },
                 Err(()) => panic!(),
             };
