@@ -28,6 +28,12 @@ pub fn app<'a, 'b>() -> App<'a, 'b> {
                 .required(true)
                 .validator(is_six_digit),
         )
+        .arg(
+            Arg::with_name("repeat-limit")
+                .short("r")
+                .long("repeat-limit")
+                .help("This specifies that the possible passwords will be validated using the algorithm specified in part two.")
+        )
         .setting(AppSettings::ArgRequiredElseHelp)
 }
 
@@ -35,6 +41,7 @@ pub fn app<'a, 'b>() -> App<'a, 'b> {
 pub struct Opt {
     pub min: i32,
     pub max: i32,
+    pub repeat_limit: bool,
 }
 
 impl From<ArgMatches<'_>> for Opt {
@@ -42,6 +49,7 @@ impl From<ArgMatches<'_>> for Opt {
         Self {
             min: matches.value_of("min").unwrap().parse().unwrap(),
             max: matches.value_of("max").unwrap().parse().unwrap(),
+            repeat_limit: matches.is_present("repeat-limit")
         }
     }
 }
