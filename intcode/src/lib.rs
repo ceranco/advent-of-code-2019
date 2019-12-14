@@ -1,3 +1,19 @@
+#[derive(Clone, Copy)]
+enum ParameterMode {
+    Position,
+    Immediate,
+}
+
+impl ParameterMode {
+    fn from_i32(i: i32) -> Result<Self, ()> {
+        match i {
+            0 => Ok(ParameterMode::Position),
+            1 => Ok(ParameterMode::Immediate),
+            _ => Err(()),
+        }
+    }
+}
+
 /// The opcodes supported by the `IntcodeComputer`.
 ///
 /// # Parameter modes
@@ -29,7 +45,7 @@
 /// [1002, 4, 3, 4, 99, 99]
 /// ```
 #[derive(Clone, Copy)]
-pub enum Opcode {
+enum Opcode {
     /// Adds the numbers in parameters (`src1`, `src2`) and saves the sum in the location specified by (`dst`).
     /// ```
     /// [1(Add), src1(0|1), src2(0|1), dst(0)]
@@ -45,7 +61,7 @@ pub enum Opcode {
     /// ```
     /// [42, 5, 2, 0, 99, 40]
     /// ```
-    Add = 1,
+    Add(ParameterMode, ParameterMode),
     /// Multiplies the numbers in parameters (`src1`, `src2`) and saves the product in the location specified by (`dst`):  
     /// ```
     /// [2(Multiply), src1(0|1), src2(0|1), dst(0)]
@@ -61,7 +77,7 @@ pub enum Opcode {
     /// ```
     /// [80, 40, 5, 0, 99, 2]
     /// ```
-    Multiply = 2,
+    Multiply(ParameterMode, ParameterMode),
     /// Takes a single integer as input and saves it to memory location `dst`.
     /// ```
     /// [3(Input), dst(0)]
@@ -76,7 +92,7 @@ pub enum Opcode {
     /// ```
     /// [42, 0, 99]
     /// ```
-    Input = 3,
+    Input,
     /// Outputs a single integer value in parameter (`src`).
     /// ```
     /// [4(Output), src(0|1)]
@@ -87,7 +103,7 @@ pub enum Opcode {
     /// [4, 0, 99]
     /// ```
     /// This program will output a single value in location `0` (4).
-    Output = 4,
+    Output(ParameterMode),
     /// Terminates the program.
     ///
     /// # Example
@@ -96,16 +112,31 @@ pub enum Opcode {
     /// ```
     /// This program does nothing, as it terminates after executing the   
     /// instruction in memory location `0`.
-    Terminate = 99,
+    Terminate,
 }
 
 impl Opcode {
-    pub fn from_i32(i: i32) -> Result<Self, ()> {
+    fn from_i32(i: i32) -> Result<Self, ()> {
+        let opcode = i % 100; // get the right two digits
+        let modes = (i / 100) // discard the right two digits
+            .to_string()
+            .chars() // split into digits
+            .rev() // reverse as the parameter modes are specified from right to left
+            .map(|c| ParameterMode::from_i32(c.to_digit(10).unwrap() as i32).unwrap()) // parse each digit into a parameter mode
+            .collect::<Vec<ParameterMode>>();
         match i {
-            1 => Ok(Opcode::Add),
-            2 => Ok(Opcode::Multiply),
+            1 => Ok(Opcode::Add(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+            )),
+            2 => Ok(Opcode::Multiply(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+            )),
             3 => Ok(Opcode::Input),
-            4 => Ok(Opcode::Output),
+            4 => Ok(Opcode::Output(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+            )),
             99 => Ok(Opcode::Terminate),
             _ => Err(()),
         }
@@ -130,30 +161,28 @@ impl IntcodeComputer {
         // run the program
         let mut pc = 0usize;
         loop {
-            match Opcode::from_i32(self.memory[pc]) {
-                Ok(opcode) => match opcode {
-                    Opcode::Add => {
-                        // get the addresses
-                        let idx1 = self.memory[pc + 1] as usize;
-                        let idx2 = self.memory[pc + 2] as usize;
-                        let dst = self.memory[pc + 3] as usize;
+            let opcode = Opcode::from_i32(self.memory[pc]).unwrap(); // get the opcode from the first two digits
+            match opcode {
+                Opcode::Add(src1_mode, src2_mode) => {
+                    // get the addresses
+                    let idx1 = self.memory[pc + 1] as usize;
+                    let idx2 = self.memory[pc + 2] as usize;
+                    let dst = self.memory[pc + 3] as usize;
 
-                        // perform the operation
-                        self.memory[dst] = self.memory[idx1] + self.memory[idx2];
-                    }
-                    Opcode::Multiply => {
-                        // get the addresses
-                        let idx1 = self.memory[pc + 1] as usize;
-                        let idx2 = self.memory[pc + 2] as usize;
-                        let dst = self.memory[pc + 3] as usize;
+                    // perform the operation
+                    self.memory[dst] = self.memory[idx1] + self.memory[idx2];
+                }
+                Opcode::Multiply(src1_mode, src2_mode) => {
+                    // get the addresses
+                    let idx1 = self.memory[pc + 1] as usize;
+                    let idx2 = self.memory[pc + 2] as usize;
+                    let dst = self.memory[pc + 3] as usize;
 
-                        // perform the operation
-                        self.memory[dst] = self.memory[idx1] * self.memory[idx2];
-                    }
-                    Opcode::Terminate => break,
-                    _ => unimplemented!(),
-                },
-                Err(()) => panic!(),
+                    // perform the operation
+                    self.memory[dst] = self.memory[idx1] * self.memory[idx2];
+                }
+                Opcode::Terminate => break,
+                _ => unimplemented!(),
             };
             pc += 4;
         }
