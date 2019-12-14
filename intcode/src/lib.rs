@@ -1,7 +1,71 @@
 #[derive(Clone, Copy)]
 pub enum Opcode {
+    /// Adds the numbers contained in two memory locations (`src1`, `src2`) and saves the sum in a third (`dst`):  
+    /// ```
+    /// [1(Add), src1, src2, dst]
+    /// ````
+    /// 
+    /// # Example
+    /// ```
+    /// [1, 5, 6, 0, 99, 40, 2]
+    /// ```
+    /// This program adds the two numbers at memory locations `5` (40) and `6` (2),   
+    /// saves the sum (42) in memory location `0` and then terminates.  
+    /// At the end of the program, the memory will look like the following:
+    /// ```
+    /// [42, 5, 6, 0, 99, 40, 2]
+    /// ```
     Add = 1,
+    /// Multiplies the numbers contained in two memory locations (`src1`, `src2`) and saves the product in a third (`dst`):  
+    /// ```
+    /// [2(Multiply), src1, src2, dst]
+    /// ````
+    /// 
+    /// # Example
+    /// ```
+    /// [2, 5, 6, 0, 99, 40, 2]
+    /// ```
+    /// This program multiplies the two numbers at memory locations `5` (40) and `6` (2),   
+    /// saves the product (80) in memory location `0` and then terminates.  
+    /// At the end of the program, the memory will look like the following:
+    /// ```
+    /// [80, 5, 6, 0, 99, 40, 2]
+    /// ```
     Multiply = 2,
+    /// Takes a single integer as input and saves it to memory location `dst`.
+    /// ```
+    /// [3(Input), dst]
+    /// ```
+    /// 
+    /// # Example
+    /// ```
+    /// [3, 0, 99]
+    /// ```
+    /// This program will take a single input and save in location `0`.
+    /// Given the input `42`, the memory will look like the following at the program's end:
+    /// ```
+    /// [42, 0, 99]
+    /// ```
+    Input = 3,
+    /// Outputs a single integer value (`dst`).
+    /// ```
+    /// [4(Output), dst]
+    /// ```
+    /// 
+    /// # Example
+    /// ```
+    /// [4, 0, 99]
+    /// ```
+    /// This program will output a single value in location `0` (4).
+    Output = 4,
+    /// Terminates the program.
+    /// 
+    /// # Example
+    /// ```
+    /// [99, 1, 0, 1, 0]
+    /// ```
+    /// This program does nothing, as it terminates after execution the   
+    /// opcode in memory location `0`.
     Terminate = 99,
 }
 
@@ -10,6 +74,8 @@ impl Opcode {
         match i {
             1 => Ok(Opcode::Add),
             2 => Ok(Opcode::Multiply),
+            3 => Ok(Opcode::Input),
+            4 => Ok(Opcode::Output),
             99 => Ok(Opcode::Terminate),
             _ => Err(()),
         }
@@ -55,6 +121,7 @@ impl IntcodeComputer {
                         self.memory[dst] = self.memory[idx1] * self.memory[idx2];
                     }
                     Opcode::Terminate => break,
+                    _ => unimplemented!()
                 },
                 Err(()) => panic!(),
             };
