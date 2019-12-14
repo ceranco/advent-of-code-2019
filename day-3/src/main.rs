@@ -152,16 +152,14 @@ fn main() {
             .iter()
             .map(|intersection| {
                 // check the number of steps
-                let end_line1 =
-                    Line::new(intersection.line1.beginning, intersection.point);
+                let end_line1 = Line::new(intersection.line1.beginning, intersection.point);
                 let steps1 = (&lines[0])
                     .iter()
                     .take(intersection.line1_idx)
                     .chain(once(&end_line1))
                     .fold(0, |ctr, line| ctr + line.len());
 
-                let end_line2 =
-                    Line::new(intersection.line2.beginning, intersection.point);
+                let end_line2 = Line::new(intersection.line2.beginning, intersection.point);
                 let steps2 = (&lines[1])
                     .iter()
                     .take(intersection.line2_idx)
@@ -176,9 +174,6 @@ fn main() {
                     lowest
                 }
             });
-            println!(
-                "Closest intersection point: {:?}, steps: {}",
-                point, steps
-            );
+        println!("Closest intersection point: {:?}, steps: {}", point, steps);
     }
 }
