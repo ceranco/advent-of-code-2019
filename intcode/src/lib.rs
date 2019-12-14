@@ -1,55 +1,85 @@
+/// The opcodes supported by the `IntcodeComputer`.
+/// 
+/// # Parameter modes
+/// The parameters of each code support two modes:
+/// 
+/// 1. *position* (`0`) - the parameter is interpreted as a **memory location**.
+/// 2. *immediate* (`1`) - the parameter is intereted as a **value**.
+/// 
+/// If the parameter mode is **not** specified for a specific parameter,  
+/// it defaults to *position* (`0`) mode.   
+/// Parameters that the instruction writes to (`dst`) will **never**   
+/// be in *immediate* (`1`) mode, **only** in *position* (`0`) mode.
+/// 
+/// Parameter modes are stored in the same value as the instruction's opcode.  
+/// The opcode is the rightmost two digits of the first value in an instruction.  
+/// Parameter modes are single digits, one per parameter, read right-to-left from the opcode.
+/// 
+/// ## Example
+/// ```
+/// [1002, 4, 3, 4, 33, 99]
+/// ```
+/// The first instruction, `[1002, 4, 3, 4]`, is a multiply instruction:   
+/// the rightmost two digits of the first value, `02`, indicate multiplication.  
+/// Then, going right to left, the parameter modes are `0`, `1` and `0` (not present, default to `0`)  
+/// 
+/// As such, the program will multiply the value at location `4`(33) with 3
+/// and save the product (99) at location `4`:
+/// ```
+/// [1002, 4, 3, 4, 99, 99]
+/// ```
 #[derive(Clone, Copy)]
 pub enum Opcode {
-    /// Adds the numbers contained in two memory locations (`src1`, `src2`) and saves the sum in a third (`dst`):  
+    /// Adds the numbers in parameters (`src1`, `src2`) and saves the sum in the location specified by (`dst`).
     /// ```
-    /// [1(Add), src1, src2, dst]
+    /// [1(Add), src1(0|1), src2(0|1), dst(0)]
     /// ````
     /// 
     /// # Example
     /// ```
-    /// [1, 5, 6, 0, 99, 40, 2]
+    /// [1001, 5, 2, 0, 99, 40]
     /// ```
-    /// This program adds the two numbers at memory locations `5` (40) and `6` (2),   
+    /// This program adds the the number at location `5` with 2,   
     /// saves the sum (42) in memory location `0` and then terminates.  
     /// At the end of the program, the memory will look like the following:
     /// ```
-    /// [42, 5, 6, 0, 99, 40, 2]
+    /// [42, 5, 2, 0, 99, 40]
     /// ```
     Add = 1,
-    /// Multiplies the numbers contained in two memory locations (`src1`, `src2`) and saves the product in a third (`dst`):  
+    /// Multiplies the numbers in parameters (`src1`, `src2`) and saves the product in the location specified by (`dst`):  
     /// ```
-    /// [2(Multiply), src1, src2, dst]
+    /// [2(Multiply), src1(0|1), src2(0|1), dst(0)]
     /// ````
     /// 
     /// # Example
     /// ```
-    /// [2, 5, 6, 0, 99, 40, 2]
+    /// [102, 40, 5, 0, 99, 2]
     /// ```
-    /// This program multiplies the two numbers at memory locations `5` (40) and `6` (2),   
+    /// This program multiplies the number 40 with the number at memory location `5` (2),  
     /// saves the product (80) in memory location `0` and then terminates.  
     /// At the end of the program, the memory will look like the following:
     /// ```
-    /// [80, 5, 6, 0, 99, 40, 2]
+    /// [80, 40, 5, 0, 99, 2]
     /// ```
     Multiply = 2,
     /// Takes a single integer as input and saves it to memory location `dst`.
     /// ```
-    /// [3(Input), dst]
+    /// [3(Input), dst(0)]
     /// ```
     /// 
     /// # Example
     /// ```
     /// [3, 0, 99]
     /// ```
-    /// This program will take a single input and save in location `0`.
+    /// This program will take a single input and save in location `0` .   
     /// Given the input `42`, the memory will look like the following at the program's end:
     /// ```
     /// [42, 0, 99]
     /// ```
     Input = 3,
-    /// Outputs a single integer value (`dst`).
+    /// Outputs a single integer value in parameter (`src`).
     /// ```
-    /// [4(Output), dst]
+    /// [4(Output), src(0|1)]
     /// ```
     /// 
     /// # Example
@@ -64,8 +94,8 @@ pub enum Opcode {
     /// ```
     /// [99, 1, 0, 1, 0]
     /// ```
-    /// This program does nothing, as it terminates after execution the   
-    /// opcode in memory location `0`.
+    /// This program does nothing, as it terminates after executing the   
+    /// instruction in memory location `0`.
     Terminate = 99,
 }
 
