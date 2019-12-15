@@ -1,8 +1,10 @@
+use std::io::{self, Write};
+
 /// The parameter modes support by each `OpCode`.
 ///
 /// Each parameter mode signals to the `IntcodeComputer` how to   
 /// interpret the parameter value.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum ParameterMode {
     /// In this mode, the value of the parameter will be interpreted
     /// as a memory location.
@@ -57,7 +59,7 @@ impl ParameterMode {
 /// ```
 /// [1002, 4, 3, 4, 99, 99]
 /// ```
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum Opcode {
     /// Adds the numbers in parameters (`src1`, `src2`) and saves the sum in the location specified by (`dst`).
     /// ```
@@ -154,6 +156,14 @@ impl Opcode {
             _ => Err(()),
         }
     }
+
+    fn instruction_size(&self) -> usize {
+        match self {
+            Opcode::Add(_, _) | Opcode::Multiply(_, _) => 4,
+            Opcode::Input | Opcode::Output(_) => 2,
+            Opcode::Terminate => 1,
+        }
+    }
 }
 
 /// Represents an Intcode computer.
@@ -194,18 +204,34 @@ impl IntcodeComputer {
                     self.memory[dst] = src1 + src2;
                 }
                 Opcode::Multiply(src1_mode, src2_mode) => {
-                    // get the addresses
+                    // get the parameters
                     let src1 = get_value(&self.memory, pc + 1, src1_mode);
                     let src2 = get_value(&self.memory, pc + 2, src2_mode);
                     let dst = self.memory[pc + 3] as usize; // always in position mode
-
+                    
                     // perform the operation
                     self.memory[dst] = src1 * src2;
                 }
+                Opcode::Input => {
+                    // get the parameters
+                    let mut input_str = String::new();
+                    io::stdin().read_line(&mut input_str).expect("Failed to read line"); // TODO: change to accepted streams
+                    let input: i32 = input_str.trim().parse().expect("Input was not i32"); // TODO: handle wrong input gracefully
+                    let dst = self.memory[pc + 1] as usize; // always in position mode
+
+                    // perform the operation
+                    self.memory[dst] = input;
+                }
+                Opcode::Output(src_mode) => {
+                    // get the parameter
+                    let src = get_value(&self.memory, pc + 1, src_mode);
+                    
+                    // perform the operation
+                    io::stdout().write_all(format!("{}\n", src).as_bytes()).expect("Failed to output"); // TODO: change to accepted streams
+                }
                 Opcode::Terminate => break,
-                _ => unimplemented!(),
             };
-            pc += 4;
+            pc += opcode.instruction_size();
         }
         self.memory[0]
     }
