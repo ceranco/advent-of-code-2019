@@ -1,6 +1,19 @@
+/// The parameter modes support by each `OpCode`.
+///
+/// Each parameter mode signals to the `IntcodeComputer` how to   
+/// interpret the parameter value.
 #[derive(Clone, Copy)]
 enum ParameterMode {
+    /// In this mode, the value of the parameter will be interpreted
+    /// as a memory location.
+    ///
+    /// # Example
+    /// [`4`] - the value of the parameter will be interpreted as the value of memory location 4.
     Position,
+    /// In this mode, the value of the parameter will be interpreted as a value.
+    ///
+    /// # Example
+    /// [`4`] - the value of the parameter will be interpreted as simply 4.
     Immediate,
 }
 
