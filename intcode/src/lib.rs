@@ -137,7 +137,7 @@ impl Opcode {
             .rev() // reverse as the parameter modes are specified from right to left
             .map(|c| ParameterMode::from_i32(c.to_digit(10).unwrap() as i32).unwrap()) // parse each digit into a parameter mode
             .collect::<Vec<ParameterMode>>();
-        match i {
+        match opcode {
             1 => Ok(Opcode::Add(
                 *modes.get(0).unwrap_or(&ParameterMode::Position),
                 *modes.get(0).unwrap_or(&ParameterMode::Position),
@@ -171,28 +171,36 @@ impl IntcodeComputer {
     /// This methods drops `self`, but it prevents needless copies
     /// of the memory.
     pub fn run_once(mut self) -> i32 {
+        // helper function to get the correct value of a parameter
+        fn get_value(memory: &[i32], idx: usize, mode: ParameterMode) -> i32 {
+            match mode {
+                ParameterMode::Position => memory[memory[idx] as usize],
+                ParameterMode::Immediate => memory[idx],
+            }
+        }
+
         // run the program
         let mut pc = 0usize;
         loop {
             let opcode = Opcode::from_i32(self.memory[pc]).unwrap(); // get the opcode from the first two digits
             match opcode {
                 Opcode::Add(src1_mode, src2_mode) => {
-                    // get the addresses
-                    let idx1 = self.memory[pc + 1] as usize;
-                    let idx2 = self.memory[pc + 2] as usize;
-                    let dst = self.memory[pc + 3] as usize;
+                    // get the parameters
+                    let src1 = get_value(&self.memory, pc + 1, src1_mode);
+                    let src2 = get_value(&self.memory, pc + 2, src2_mode);
+                    let dst = self.memory[pc + 3] as usize; // always in position mode
 
                     // perform the operation
-                    self.memory[dst] = self.memory[idx1] + self.memory[idx2];
+                    self.memory[dst] = src1 + src2;
                 }
                 Opcode::Multiply(src1_mode, src2_mode) => {
                     // get the addresses
-                    let idx1 = self.memory[pc + 1] as usize;
-                    let idx2 = self.memory[pc + 2] as usize;
-                    let dst = self.memory[pc + 3] as usize;
+                    let src1 = get_value(&self.memory, pc + 1, src1_mode);
+                    let src2 = get_value(&self.memory, pc + 2, src2_mode);
+                    let dst = self.memory[pc + 3] as usize; // always in position mode
 
                     // perform the operation
-                    self.memory[dst] = self.memory[idx1] * self.memory[idx2];
+                    self.memory[dst] = src1 * src2;
                 }
                 Opcode::Terminate => break,
                 _ => unimplemented!(),
