@@ -236,9 +236,7 @@ impl Opcode {
             Add(_, _) | Multiply(_, _) | LessThan(_, _) | Equals(_, _) => 4,
             Input | Output(_) => 2,
             Terminate => 1,
-            // NOTE: this is zero because the program counter should **not** be incremented after these opcodes
-            // TODO: find a better way to convey this, as these instructions sizes are **not** zero
-            JumpIfFalse(_, _) | JumpIfTrue(_, _) => 0,
+            JumpIfFalse(_, _) | JumpIfTrue(_, _) => 3,
         }
     }
 }
@@ -317,7 +315,7 @@ impl IntcodeComputer {
 
                     // perform the operation
                     if cond != 0 {
-                        pc = loc;
+                        pc = loc.wrapping_sub(opcode.instruction_size());
                     }
                 }
                 Opcode::JumpIfFalse(cond_mode, loc_mode) => {
@@ -327,7 +325,7 @@ impl IntcodeComputer {
 
                     // perform the operation
                     if cond == 0 {
-                        pc = loc;
+                        pc = loc.wrapping_sub(opcode.instruction_size());
                     }
                 }
                 Opcode::LessThan(operand1_mode, operand2_mode) => {
@@ -350,7 +348,7 @@ impl IntcodeComputer {
                 }
                 Opcode::Terminate => break,
             };
-            pc += opcode.instruction_size();
+            pc = pc.wrapping_add(opcode.instruction_size());
         }
         self.memory[0]
     }
