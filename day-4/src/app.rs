@@ -1,17 +1,8 @@
 use clap::{App, AppSettings, Arg, ArgMatches};
-
-fn is_six_digit(string: String) -> Result<(), String> {
-    let num = string.parse::<i32>().map_err(|err| err.to_string())?;
-    if 100000 <= num && num <= 999999 {
-        Ok(())
-    } else {
-        Err(String::from("The number wasn't a 6-digit number"))
-    }
-}
+use validators::is_six_digit;
 
 pub fn app<'a, 'b>() -> App<'a, 'b> {
     App::new("Advent of Code Day 4")
-        .author("Eran Cohen")
         .about("Calculates the number of 6-digit passwords that exist in the given range")
         .arg(
             Arg::with_name("min")
@@ -49,7 +40,7 @@ impl From<ArgMatches<'_>> for Opt {
         Self {
             min: matches.value_of("min").unwrap().parse().unwrap(),
             max: matches.value_of("max").unwrap().parse().unwrap(),
-            repeat_limit: matches.is_present("repeat-limit")
+            repeat_limit: matches.is_present("repeat-limit"),
         }
     }
 }
