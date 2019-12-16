@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+	"validators",
 	"intcode",
 	"day-1",
 	"day-2",
