@@ -142,11 +142,11 @@ impl Opcode {
         match opcode {
             1 => Ok(Opcode::Add(
                 *modes.get(0).unwrap_or(&ParameterMode::Position),
-                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(1).unwrap_or(&ParameterMode::Position),
             )),
             2 => Ok(Opcode::Multiply(
                 *modes.get(0).unwrap_or(&ParameterMode::Position),
-                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(1).unwrap_or(&ParameterMode::Position),
             )),
             3 => Ok(Opcode::Input),
             4 => Ok(Opcode::Output(
