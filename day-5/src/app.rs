@@ -1,20 +1,9 @@
 use clap::{App, AppSettings, Arg, ArgMatches};
-use std::{
-    ffi::{OsStr, OsString},
-    path::{Path, PathBuf},
-};
-
-fn is_valid_path(path: &OsStr) -> Result<(), OsString> {
-    if Path::new(path).exists() {
-        Ok(())
-    } else {
-        Err(OsString::from("The given path does not exist"))
-    }
-}
+use std::path::PathBuf;
+use validators::is_valid_path;
 
 pub fn app<'a, 'b>() -> App<'a, 'b> {
     App::new("Advent of Code Day 5")
-        .author("Eran Cohen")
         .about("Runs the given program on an Intcode computer")
         .arg(
             Arg::with_name("input")
