@@ -1,70 +1,23 @@
+mod app;
 mod math;
 
-use crate::math::*;
-use clap::{App, AppSettings, Arg, SubCommand};
+use app::*;
+use math::*;
 use std::{
-    ffi::{OsStr, OsString},
     fs::File,
     io::{BufRead, BufReader},
     iter::once,
-    path::Path,
 };
 
-fn is_valid_path(path: &OsStr) -> Result<(), OsString> {
-    if Path::new(path).exists() {
-        Ok(())
-    } else {
-        Err(OsString::from("The given path does not exist"))
-    }
-}
-
-fn app<'a, 'b>() -> App<'a, 'b> {
-    App::new("Advent of Code Day 3")
-        .version("1.0")
-        .author("Eran Cohen")
-        .about("Returns the nearest intersection point of two wires relative to their source")
-        .subcommand(
-            SubCommand::with_name("manhattan")
-                .about("Calculates distance using the Manhattan distance algorithm (part 1)")
-                .version("1.0")
-                .author("Eran Cohen")
-                .arg(
-                    Arg::with_name("input")
-                        .short("i")
-                        .long("input")
-                        .help("The path to the input file")
-                        .takes_value(true)
-                        .required(true)
-                        .validator_os(is_valid_path),
-                ),
-        )
-        .subcommand(
-            SubCommand::with_name("steps")
-                .about("Calculates distance using the steps algorithm (part 2)")
-                .version("1.0")
-                .author("Eran Cohen")
-                .arg(
-                    Arg::with_name("input")
-                        .short("i")
-                        .long("input")
-                        .help("The path to the input file")
-                        .takes_value(true)
-                        .required(true)
-                        .validator_os(is_valid_path),
-                ),
-        )
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+struct Intersection {
+    point: Point,
+    line1: Line,
+    line1_idx: usize,
+    line2: Line,
+    line2_idx: usize,
 }
 
 fn main() {
-    struct Intersection {
-        point: Point,
-        line1: Line,
-        line1_idx: usize,
-        line2: Line,
-        line2_idx: usize,
-    };
-
     // get the path to the input file
     let matches = app().get_matches();
 
