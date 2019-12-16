@@ -242,6 +242,26 @@ impl Opcode {
 }
 
 /// Represents an Intcode computer.
+/// 
+/// Each instance will *own* its own memory (`Vec<i32>`).
+/// 
+/// # Example
+/// ```
+/// use intcode::*;
+/// 
+/// fn main() {
+///     let memory = vec![1101, 40, 2, 0, 99];
+///     let computer = IntcodeComputer::new(memory);
+/// 
+///     println!("The run finished with return value: {}", computer.run_once()); 
+/// }
+/// ```
+/// 
+/// This will create a new computer with a simple program that increments two numbers.  
+/// At the end of the run (`run`/`run_once`) the value at location (0) of the memory will  
+/// be returned.
+/// 
+/// *NOTE*: run_once consumes the memory, and as such can only be called once
 pub struct IntcodeComputer {
     memory: Vec<i32>,
 }
