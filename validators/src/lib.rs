@@ -24,7 +24,7 @@ pub fn is_valid_path(path: &OsStr) -> Result<(), OsString> {
 }
 
 /// Validates that the given string is a valid `i32`.
-/// 
+///
 /// # Example
 /// ```rust
 /// App::new("Example")
@@ -43,7 +43,7 @@ pub fn is_valid_i32(input: String) -> Result<(), String> {
 }
 
 /// Validates the the given string is a 6-digit `i32`.
-/// 
+///
 /// # Example
 /// ```rust
 /// App::new("Example")
