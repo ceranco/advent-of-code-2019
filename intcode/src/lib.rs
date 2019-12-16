@@ -119,6 +119,63 @@ enum Opcode {
     /// ```
     /// This program will output a single value in location `0` (4).
     Output(ParameterMode),
+    /// Sets the program counter to the second parameter (`loc`) if the first parameter is **non-zero** (`cond`).
+    /// ```
+    /// [5(JumpIfTrue), cond, loc]
+    /// ```
+    ///
+    /// # Example
+    /// ```
+    /// [5, 1, 0, 99]
+    /// ```
+    /// This program will loop indefinitely.
+    JumpIfTrue(ParameterMode, ParameterMode),
+    /// Sets the program counter to the second parameter (`loc`) if the first parameter is **zero** (`cond`).
+    /// ```
+    /// [6(JumpIfFalse), cond, loc]
+    /// ```
+    ///
+    /// # Example
+    /// ```
+    /// [6, 0, 0, 99]
+    /// ```
+    /// This program will loop indefinitely.
+    JumpIfFalse(ParameterMode, ParameterMode),
+    /// If the first parameter (`operand1`) is less than the second parameter (`operand2`),  
+    /// it stores 1 in the position given by the third parameter (`dst`). Otherwise, it stores 0.
+    /// ```
+    /// [7(LessThan), operand1, operand2, dst]
+    /// ```
+    ///
+    /// # Example
+    /// ```
+    /// [1107, 3, 4, 0, 99]
+    /// ```
+    /// This program will check if `3` is less than `4`, and if so store 1 in position `0` .   
+    /// At the end of the program, the memory will look like:
+    /// ```
+    /// [1, 3, 4, 0, 99]
+    /// ```
+    LessThan(ParameterMode, ParameterMode),
+    /// If the first parameter (`operand1`) is equal to the second parameter (`operand2`),  
+    /// it stores 1 in the position given by the third parameter (`dst`). Otherwise, it stores 0.
+    /// ```
+    /// [8(Equals), operand1, operand2, dst]
+    /// ```
+    ///
+    /// # Example
+    /// ```
+    /// [1108, 42, 42, 0, 1108, 42, 41, 1, 99]
+    /// ```
+    /// This program will make two comparisons:
+    /// 1. `42` and `42`
+    /// 2. `42` and `41`
+    ///
+    /// and stores the results in location `0` and `1` respectively:
+    /// ```
+    /// [1, 0, 42, 0, 1108, 42, 41, 1, 99]
+    /// ```
+    Equals(ParameterMode, ParameterMode),
     /// Terminates the program.
     ///
     /// # Example
@@ -152,16 +209,36 @@ impl Opcode {
             4 => Ok(Opcode::Output(
                 *modes.get(0).unwrap_or(&ParameterMode::Position),
             )),
+            5 => Ok(Opcode::JumpIfTrue(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(1).unwrap_or(&ParameterMode::Position),
+            )),
+            6 => Ok(Opcode::JumpIfFalse(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(1).unwrap_or(&ParameterMode::Position),
+            )),
+            7 => Ok(Opcode::LessThan(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(1).unwrap_or(&ParameterMode::Position),
+            )),
+            8 => Ok(Opcode::Equals(
+                *modes.get(0).unwrap_or(&ParameterMode::Position),
+                *modes.get(1).unwrap_or(&ParameterMode::Position),
+            )),
             99 => Ok(Opcode::Terminate),
             _ => Err(()),
         }
     }
 
     fn instruction_size(&self) -> usize {
+        use Opcode::*;
         match self {
-            Opcode::Add(_, _) | Opcode::Multiply(_, _) => 4,
-            Opcode::Input | Opcode::Output(_) => 2,
-            Opcode::Terminate => 1,
+            Add(_, _) | Multiply(_, _) | LessThan(_, _) | Equals(_, _) => 4,
+            Input | Output(_) => 2,
+            Terminate => 1,
+            // NOTE: this is zero because the program counter should **not** be incremented after these opcodes
+            // TODO: find a better way to convey this, as these instructions sizes are **not** zero
+            JumpIfFalse(_, _) | JumpIfTrue(_, _) => 0,
         }
     }
 }
@@ -208,14 +285,16 @@ impl IntcodeComputer {
                     let src1 = get_value(&self.memory, pc + 1, src1_mode);
                     let src2 = get_value(&self.memory, pc + 2, src2_mode);
                     let dst = self.memory[pc + 3] as usize; // always in position mode
-                    
+
                     // perform the operation
                     self.memory[dst] = src1 * src2;
                 }
                 Opcode::Input => {
                     // get the parameters
                     let mut input_str = String::new();
-                    io::stdin().read_line(&mut input_str).expect("Failed to read line"); // TODO: change to accepted streams
+                    io::stdin()
+                        .read_line(&mut input_str)
+                        .expect("Failed to read line"); // TODO: change to accepted streams
                     let input: i32 = input_str.trim().parse().expect("Input was not i32"); // TODO: handle wrong input gracefully
                     let dst = self.memory[pc + 1] as usize; // always in position mode
 
@@ -225,9 +304,49 @@ impl IntcodeComputer {
                 Opcode::Output(src_mode) => {
                     // get the parameter
                     let src = get_value(&self.memory, pc + 1, src_mode);
-                    
+
                     // perform the operation
-                    io::stdout().write_all(format!("{}\n", src).as_bytes()).expect("Failed to output"); // TODO: change to accepted streams
+                    io::stdout()
+                        .write_all(format!("{}\n", src).as_bytes())
+                        .expect("Failed to output"); // TODO: change to accepted streams
+                }
+                Opcode::JumpIfTrue(cond_mode, loc_mode) => {
+                    // get the parameters
+                    let cond = get_value(&self.memory, pc + 1, cond_mode);
+                    let loc = get_value(&self.memory, pc + 2, loc_mode) as usize;
+
+                    // perform the operation
+                    if cond != 0 {
+                        pc = loc;
+                    }
+                }
+                Opcode::JumpIfFalse(cond_mode, loc_mode) => {
+                    // get the parameters
+                    let cond = get_value(&self.memory, pc + 1, cond_mode);
+                    let loc = get_value(&self.memory, pc + 2, loc_mode) as usize;
+
+                    // perform the operation
+                    if cond == 0 {
+                        pc = loc;
+                    }
+                }
+                Opcode::LessThan(operand1_mode, operand2_mode) => {
+                    // get the parameters
+                    let operand1 = get_value(&self.memory, pc + 1, operand1_mode);
+                    let operand2 = get_value(&self.memory, pc + 2, operand2_mode);
+                    let dst = self.memory[pc + 3] as usize; // always in position mode
+
+                    // perform the operation
+                    self.memory[dst] = if operand1 < operand2 { 1 } else { 0 }
+                }
+                Opcode::Equals(operand1_mode, operand2_mode) => {
+                    // get the parameters
+                    let operand1 = get_value(&self.memory, pc + 1, operand1_mode);
+                    let operand2 = get_value(&self.memory, pc + 2, operand2_mode);
+                    let dst = self.memory[pc + 3] as usize; // always in position mode
+
+                    // perform the operation
+                    self.memory[dst] = if operand1 == operand2 { 1 } else { 0 }
                 }
                 Opcode::Terminate => break,
             };
