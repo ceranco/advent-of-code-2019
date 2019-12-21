@@ -36,7 +36,7 @@ fn main() {
             // check distance
             match tree.distance(&src, &dst) {
                 Some(distance) => println!("|{}| --- {}|: {}", src, dst, distance - 2),
-                None => println!("Could not find stars '{}' and/or '{}' in the map", src, dst)
+                None => println!("Could not find stars '{}' and/or '{}' in the map", src, dst),
             }
         }
     }

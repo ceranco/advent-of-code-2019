@@ -135,7 +135,6 @@ impl Tree {
                 idx2 = node2.parent.unwrap();
                 distance += 2;
             }
-
         }
 
         Some(distance)

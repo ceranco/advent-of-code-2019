@@ -18,28 +18,30 @@ pub fn app<'a, 'b>() -> App<'a, 'b> {
         )
         .subcommand(
             SubCommand::with_name("distance")
-                .about("Calculates the distance between two stars in the given 'Universal Orbit Map'")
+                .about(
+                    "Calculates the distance between two stars in the given 'Universal Orbit Map'",
+                )
                 .arg(
                     Arg::with_name("input")
                         .help("The input file containing the map.")
                         .takes_value(true)
                         .required(true)
                         .validator_os(is_valid_path)
-                        .display_order(1)
+                        .display_order(1),
                 )
                 .arg(
                     Arg::with_name("src")
                         .help("The first star.")
                         .takes_value(true)
                         .required(true)
-                        .display_order(2)
+                        .display_order(2),
                 )
                 .arg(
                     Arg::with_name("dst")
                         .help("The second star.")
                         .takes_value(true)
                         .required(true)
-                        .display_order(3)
+                        .display_order(3),
                 ),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp)
