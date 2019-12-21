@@ -14,7 +14,7 @@ fn main() {
         .split(',')
         .map(|s| s.parse::<i32>().expect("Malformed input"))
         .collect();
-    let mut pc = IntcodeComputer::new(memory);
+    let mut pc = IntcodeComputer::with_stdio(memory);
 
     match subcommand_name {
         "run" => {

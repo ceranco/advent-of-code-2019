@@ -269,7 +269,9 @@ pub struct IntcodeComputer<R: Read, W: Write> {
 }
 
 impl IntcodeComputer<Stdin, Stdout> {
-    pub fn new(memory: Vec<i32>) -> Self {
+    /// Creates a new instance of `IntcodeComputer` that uses  
+    /// `Stdin` and `Stdout` as the input and output streams.
+    pub fn with_stdio(memory: Vec<i32>) -> Self {
         Self {
             memory,
             input: BufReader::new(io::stdin()),
@@ -279,11 +281,15 @@ impl IntcodeComputer<Stdin, Stdout> {
 }
 
 impl<R: Read, W: Write> IntcodeComputer<R, W> {
-    /// Runs program and consumes the memory.
-    ///
-    /// This methods drops `self`, but it prevents needless copies
-    /// of the memory.
-    pub fn run_once(mut self) -> i32 {
+    pub fn new(memory: Vec<i32>, input: R, output: W) -> Self {
+        Self {
+            memory,
+            input: BufReader::new(input),
+            output,
+        }
+    }
+
+    fn run_impl(&mut self) -> i32 {
         // helper function to get the correct value of a parameter
         fn get_value(memory: &[i32], idx: usize, mode: ParameterMode) -> i32 {
             match mode {
@@ -381,13 +387,27 @@ impl<R: Read, W: Write> IntcodeComputer<R, W> {
         self.memory[0]
     }
 
+    /// Runs program and consumes the memory.
+    ///
+    /// This methods drops `self`, but it prevents needless copies
+    /// of the memory.
+    pub fn run_once(mut self) -> i32 {
+        self.run_impl()
+    }
+
     /// Runs program and without consuming the memory.
     ///
     /// Can be run multiple times, but requires copying the memory
     /// each time.
-    pub fn run(&self) -> i32 {
-        let pc = IntcodeComputer::new(self.memory.clone());
-        pc.run_once()
+    pub fn run(&mut self) -> i32 {
+        // clone the memory to restore later
+        let memory = self.memory.clone();
+        let output = self.run_impl();
+
+        // restore the memory
+        self.memory = memory;
+
+        output
     }
 
     /// Sets the noun and the verb of the program.

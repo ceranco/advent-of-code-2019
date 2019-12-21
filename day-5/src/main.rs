@@ -11,6 +11,6 @@ fn main() {
         .split(',')
         .map(|s| s.parse::<i32>().expect("Malformed input"))
         .collect();
-    let pc = IntcodeComputer::new(memory);
+    let pc = IntcodeComputer::with_stdio(memory);
     pc.run_once();
 }
