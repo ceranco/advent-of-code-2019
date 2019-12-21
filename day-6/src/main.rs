@@ -24,9 +24,20 @@ fn main() {
     }
     let tree = tree_builder.build();
 
-    // recursive traveral
-    let mut counter: i32 = 0;
-    tree.traverse(|node| counter += node.depth);
+    match opt.command {
+        Command::Checksum => {
+            // recursive traveral
+            let mut counter: i32 = 0;
+            tree.traverse(|node| counter += node.depth);
 
-    println!("Checksum: {}", counter);
+            println!("Checksum: {}", counter);
+        }
+        Command::Distance { src, dst } => {
+            // check distance
+            match tree.distance(&src, &dst) {
+                Some(distance) => println!("|{}| --- {}|: {}", src, dst, distance - 2),
+                None => println!("Could not find stars '{}' and/or '{}' in the map", src, dst)
+            }
+        }
+    }
 }
