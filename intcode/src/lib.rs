@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{self, BufRead, BufReader, Read, Stdin, Stdout, Write};
 
 /// The parameter modes support by each `OpCode`.
 ///
@@ -242,35 +242,43 @@ impl Opcode {
 }
 
 /// Represents an Intcode computer.
-/// 
+///
 /// Each instance will *own* its own memory (`Vec<i32>`).
-/// 
+///
 /// # Example
 /// ```
 /// use intcode::*;
-/// 
+///
 /// fn main() {
 ///     let memory = vec![1101, 40, 2, 0, 99];
 ///     let computer = IntcodeComputer::new(memory);
-/// 
-///     println!("The run finished with return value: {}", computer.run_once()); 
+///
+///     println!("The run finished with return value: {}", computer.run_once());
 /// }
 /// ```
-/// 
+///
 /// This will create a new computer with a simple program that increments two numbers.  
 /// At the end of the run (`run`/`run_once`) the value at location (0) of the memory will  
 /// be returned.
-/// 
+///
 /// *NOTE*: run_once consumes the memory, and as such can only be called once
-pub struct IntcodeComputer {
+pub struct IntcodeComputer<R: Read, W: Write> {
     memory: Vec<i32>,
+    input: BufReader<R>,
+    output: W,
 }
 
-impl IntcodeComputer {
+impl IntcodeComputer<Stdin, Stdout> {
     pub fn new(memory: Vec<i32>) -> Self {
-        Self { memory }
+        Self {
+            memory,
+            input: BufReader::new(io::stdin()),
+            output: io::stdout(),
+        }
     }
+}
 
+impl<R: Read, W: Write> IntcodeComputer<R, W> {
     /// Runs program and consumes the memory.
     ///
     /// This methods drops `self`, but it prevents needless copies
@@ -310,9 +318,9 @@ impl IntcodeComputer {
                 Opcode::Input => {
                     // get the parameters
                     let mut input_str = String::new();
-                    io::stdin()
+                    self.input
                         .read_line(&mut input_str)
-                        .expect("Failed to read line"); // TODO: change to accepted streams
+                        .expect("Failed to read line");
                     let input: i32 = input_str.trim().parse().expect("Input was not i32"); // TODO: handle wrong input gracefully
                     let dst = self.memory[pc + 1] as usize; // always in position mode
 
@@ -324,9 +332,9 @@ impl IntcodeComputer {
                     let src = get_value(&self.memory, pc + 1, src_mode);
 
                     // perform the operation
-                    io::stdout()
+                    self.output
                         .write_all(format!("{}\n", src).as_bytes())
-                        .expect("Failed to output"); // TODO: change to accepted streams
+                        .expect("Failed to output");
                 }
                 Opcode::JumpIfTrue(cond_mode, loc_mode) => {
                     // get the parameters
