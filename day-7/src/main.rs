@@ -1,12 +1,21 @@
 mod app;
-mod stream;
 use app::*;
 use intcode::*;
 use std::{
     fs::read_to_string,
-    io::{Read, Write},
+    sync::mpsc::{channel, Receiver, Sender},
 };
-use stream::*;
+
+struct Stream {
+    receiver: Receiver<i32>,
+    sender: Sender<i32>,
+}
+
+impl From<(Sender<i32>, Receiver<i32>)> for Stream {
+    fn from((sender, receiver): (Sender<i32>, Receiver<i32>)) -> Self {
+        Self { receiver, sender }
+    }
+}
 
 fn main() {
     // load the program
@@ -19,8 +28,9 @@ fn main() {
         .collect();
 
     // prepare the io stream and amplifier
-    let mut io_stream = Stream::new();
-    let mut ampilfier = IntcodeComputer::new(memory, io_stream.clone(), io_stream.clone());
+    let mut input: Stream = channel().into();
+    let mut output: Stream = channel().into();
+    let mut ampilfier = IntcodeComputer::new(memory, input.receiver, output.sender);
 
     // generate all the possible phase settings
     let mut phase_settings = [[0; 5]; 120];
@@ -56,29 +66,24 @@ fn main() {
     let mut highest_thrust_idx = 0;
     for (idx, phase_setting) in phase_settings.iter().enumerate() {
         // setup the input
-        io_stream
-            .write_all(format!("{}\n0\n", phase_setting[0]).as_bytes())
-            .unwrap();
+        input.sender.push(phase_setting[0]);
+        input.sender.push(0);
 
         // run the amplifiers
         ampilfier.run(); // run the first one
         for i in 1..5 {
-            let mut output = String::new();
-            io_stream.read_to_string(&mut output).unwrap();
-
+            let output = output.receiver.get().unwrap();
             let setting = phase_setting[i];
+
             // setup the input
-            io_stream
-                .write_all(format!("{}\n{}", setting, output).as_bytes())
-                .unwrap();
+            input.sender.push(setting);
+            input.sender.push(output);
 
             // run the amplifier
             ampilfier.run();
         }
 
-        let mut value = String::new();
-        io_stream.read_to_string(&mut value).unwrap();
-        let value: i32 = value.trim().parse().unwrap();
+        let value = output.receiver.get().unwrap();
         if value > highest_thrust_value {
             highest_thrust_value = value;
             highest_thrust_idx = idx
