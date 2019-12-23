@@ -278,11 +278,7 @@ impl IntcodeComputer<Stdin, Stdout> {
     /// Creates a new instance of `IntcodeComputer` that uses  
     /// `Stdin` and `Stdout` as the input and output streams.
     pub fn with_stdio(memory: Vec<i32>) -> Self {
-        Self {
-            memory,
-            input: io::stdin(),
-            output: io::stdout(),
-        }
+        Self::new(memory, io::stdin(), io::stdout())
     }
 }
 
