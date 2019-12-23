@@ -1,4 +1,10 @@
-use std::io::{self, BufRead, BufReader, Read, Stdin, Stdout, Write};
+use std::{
+    error,
+    fmt::{self, Display, Formatter},
+    io::{self, Stdin, Stdout, Write},
+    num::ParseIntError,
+    sync::mpsc::{self, Receiver, Sender},
+};
 
 /// The parameter modes support by each `OpCode`.
 ///
@@ -251,7 +257,7 @@ impl Opcode {
 ///
 /// fn main() {
 ///     let memory = vec![1101, 40, 2, 0, 99];
-///     let computer = IntcodeComputer::new(memory);
+///     let computer = IntcodeComputer::with_stdio(memory);
 ///
 ///     println!("The run finished with return value: {}", computer.run_once());
 /// }
@@ -262,10 +268,10 @@ impl Opcode {
 /// be returned.
 ///
 /// *NOTE*: run_once consumes the memory, and as such can only be called once
-pub struct IntcodeComputer<R: Read, W: Write> {
+pub struct IntcodeComputer<I: Input, O: Output> {
     memory: Vec<i32>,
-    input: BufReader<R>,
-    output: W,
+    input: I,
+    output: O,
 }
 
 impl IntcodeComputer<Stdin, Stdout> {
@@ -274,17 +280,17 @@ impl IntcodeComputer<Stdin, Stdout> {
     pub fn with_stdio(memory: Vec<i32>) -> Self {
         Self {
             memory,
-            input: BufReader::new(io::stdin()),
+            input: io::stdin(),
             output: io::stdout(),
         }
     }
 }
 
-impl<R: Read, W: Write> IntcodeComputer<R, W> {
-    pub fn new(memory: Vec<i32>, input: R, output: W) -> Self {
+impl<I: Input, O: Output> IntcodeComputer<I, O> {
+    pub fn new(memory: Vec<i32>, input: I, output: O) -> Self {
         Self {
             memory,
-            input: BufReader::new(input),
+            input,
             output,
         }
     }
@@ -323,11 +329,7 @@ impl<R: Read, W: Write> IntcodeComputer<R, W> {
                 }
                 Opcode::Input => {
                     // get the parameters
-                    let mut input_str = String::new();
-                    self.input
-                        .read_line(&mut input_str)
-                        .expect("Failed to read line");
-                    let input: i32 = input_str.trim().parse().expect("Input was not i32"); // TODO: handle wrong input gracefully
+                    let input = self.input.get().expect("Input was not i32"); // TODO: handle wrong input gracefully
                     let dst = self.memory[pc + 1] as usize; // always in position mode
 
                     // perform the operation
@@ -338,9 +340,7 @@ impl<R: Read, W: Write> IntcodeComputer<R, W> {
                     let src = get_value(&self.memory, pc + 1, src_mode);
 
                     // perform the operation
-                    self.output
-                        .write_all(format!("{}\n", src).as_bytes())
-                        .expect("Failed to output");
+                    self.output.push(src);
                 }
                 Opcode::JumpIfTrue(cond_mode, loc_mode) => {
                     // get the parameters
@@ -414,5 +414,75 @@ impl<R: Read, W: Write> IntcodeComputer<R, W> {
     pub fn set(&mut self, noun: i32, verb: i32) {
         self.memory[1] = noun;
         self.memory[2] = verb;
+    }
+}
+
+/// An error which can occour while using the input/output streams.
+#[derive(Debug)]
+pub struct StreamError {
+    msg: String,
+}
+
+impl Display for StreamError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_str(&self.msg)
+    }
+}
+
+impl error::Error for StreamError {}
+
+impl From<ParseIntError> for StreamError {
+    fn from(_: ParseIntError) -> Self {
+        Self {
+            msg: String::from("Could not parse the given input into an i32"),
+        }
+    }
+}
+
+impl From<mpsc::RecvError> for StreamError {
+    fn from(_: mpsc::RecvError) -> Self {
+        Self {
+            msg: String::from("Sender disconnected from the channel"),
+        }
+    }
+}
+
+/// Represents an input stream that can be used by the [`IntcodeComputer`].
+pub trait Input {
+    /// Gets the next `i32` value from the input stream.
+    fn get(&mut self) -> Result<i32, StreamError>;
+}
+
+/// Represents an output stream that can be used by the [`IntcodeComputer`].
+pub trait Output {
+    /// Pushes the given `i32` value into the output stream.
+    fn push(&mut self, value: i32);
+}
+
+impl Input for Stdin {
+    fn get(&mut self) -> Result<i32, StreamError> {
+        let mut buffer = String::new();
+        self.read_line(&mut buffer).unwrap();
+        let value = buffer.trim().parse::<i32>()?;
+        Ok(value)
+    }
+}
+
+impl Output for Stdout {
+    fn push(&mut self, value: i32) {
+        self.write_all(format!("{}\n", value).as_bytes()).unwrap();
+    }
+}
+
+impl Input for Receiver<i32> {
+    fn get(&mut self) -> Result<i32, StreamError> {
+        let value = self.recv()?;
+        Ok(value)
+    }
+}
+
+impl Output for Sender<i32> {
+    fn push(&mut self, value: i32) {
+        self.send(value).unwrap();
     }
 }
