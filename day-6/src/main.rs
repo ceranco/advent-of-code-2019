@@ -19,7 +19,7 @@ fn main() {
     let mut tree_builder = TreeBuilder::new(String::from("COM"));
     for line in reader.lines() {
         let mapping = line.unwrap();
-        let mut stars = mapping.split(")").map(|string| string.to_owned());
+        let mut stars = mapping.split(')').map(|string| string.to_owned());
         tree_builder.add_node(stars.next().unwrap(), stars.next().unwrap());
     }
     let tree = tree_builder.build();

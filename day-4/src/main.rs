@@ -74,12 +74,6 @@ fn main() {
         std::process::exit(1)
     }
 
-    let a = is_password_valid_p2(112233);
-    let b = is_password_valid_p2(123444);
-    let c = is_password_valid_p2(111122);
-
-    println!("{}, {}, {}", a, b, c);
-
     // check how many numbers in the range are eligible passwords
     // TODO: this seems great for parallelization (maybe rayon?)
     let algo = if opt.repeat_limit {

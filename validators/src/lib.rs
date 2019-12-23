@@ -56,7 +56,7 @@ pub fn is_valid_i32(input: String) -> Result<(), String> {
 /// ```
 pub fn is_six_digit(string: String) -> Result<(), String> {
     let num = string.parse::<i32>().map_err(|err| err.to_string())?;
-    if 100000 <= num && num <= 999999 {
+    if 100_000 <= num && num <= 999_999 {
         Ok(())
     } else {
         Err(String::from("The number wasn't a 6-digit number"))

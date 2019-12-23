@@ -39,7 +39,7 @@ fn main() {
         .take(2) // take the two first lines
         .map(|line| {
             line.unwrap()
-                .split(",") // split each line into tokens
+                .split(',') // split each line into tokens
                 .map(|token| token.parse::<Vector>().unwrap()) // convert into vectors
                 .fold(vec![Point { x: 0, y: 0 }], |mut acc, vec| {
                     acc.push(*acc.last().unwrap() + vec);

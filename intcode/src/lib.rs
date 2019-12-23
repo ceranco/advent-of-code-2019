@@ -236,7 +236,7 @@ impl Opcode {
         }
     }
 
-    fn instruction_size(&self) -> usize {
+    fn instruction_size(self) -> usize {
         use Opcode::*;
         match self {
             Add(_, _) | Multiply(_, _) | LessThan(_, _) | Equals(_, _) => 4,

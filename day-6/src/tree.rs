@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, cmp::Ordering};
 
 pub struct TreeBuilder {
     root: String,
@@ -124,16 +124,20 @@ impl Tree {
             let node1 = self.nodes.get(idx1).unwrap();
             let node2 = self.nodes.get(idx2).unwrap();
 
-            if node1.depth > node2.depth {
-                idx1 = node1.parent.unwrap();
-                distance += 1;
-            } else if node1.depth < node2.depth {
-                idx2 = node2.parent.unwrap();
-                distance += 1;
-            } else {
-                idx1 = node1.parent.unwrap();
-                idx2 = node2.parent.unwrap();
-                distance += 2;
+            match node1.depth.cmp(&node2.depth) {
+                Ordering::Greater => {
+                    idx1 = node1.parent.unwrap();
+                    distance += 1;
+                }
+                Ordering::Less => {
+                    idx2 = node2.parent.unwrap();
+                    distance += 1;
+                },
+                Ordering::Equal => {
+                    idx1 = node1.parent.unwrap();
+                    idx2 = node2.parent.unwrap();
+                    distance += 2;
+                }
             }
         }
 

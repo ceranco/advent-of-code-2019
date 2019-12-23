@@ -71,12 +71,11 @@ fn main() {
 
         // run the amplifiers
         ampilfier.run(); // run the first one
-        for i in 1..5 {
+        for setting in &phase_setting[1..5] {
             let output = output.receiver.get().unwrap();
-            let setting = phase_setting[i];
 
             // setup the input
-            input.sender.push(setting);
+            input.sender.push(*setting);
             input.sender.push(output);
 
             // run the amplifier
