@@ -12,18 +12,26 @@ pub fn app<'a, 'b>() -> App<'a, 'b> {
                 .required(true)
                 .validator_os(is_valid_path),
         )
+        .arg(
+            Arg::with_name("feedback")
+                .help("Runs the amplifiers using a feedback loop")
+                .short("f")
+                .long("feedback")
+        )
         .setting(AppSettings::ArgRequiredElseHelp)
 }
 
 #[derive(Debug)]
 pub struct Opt {
     pub path: PathBuf,
+    pub feedback: bool,
 }
 
 impl From<ArgMatches<'_>> for Opt {
     fn from(matches: ArgMatches) -> Self {
         Self {
             path: matches.value_of_os("input").unwrap().into(),
+            feedback: matches.is_present("feedback"),
         }
     }
 }
